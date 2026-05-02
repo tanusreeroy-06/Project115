@@ -1,0 +1,16 @@
+221
+Paracetamol (Acetaminophen): analgesic / fever reducè
+1000
+10.00
+1970587136
+taka
+2
+12.00
+221
+Amoxicillin: broad-spectrum antibiotic
+200
+22.00
+442
+Azithromycin: macrolide antibiotic
+499
+50.00
