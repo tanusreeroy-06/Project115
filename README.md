@@ -3,7 +3,9 @@ Project Name : Pharmacy Management System
 ---------
 ---------
 ---------
-Team Members : 1. SUMON DAS 
+Team Members :
+----------------------------
+               1. SUMON DAS 
 --------------------------------------
                2. TANUSREE ROY
 --------------------------------------
