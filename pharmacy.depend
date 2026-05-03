@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1777771380 source:c:\users\hp\onedrive\desktop\c programming\pharmacy\main.c
+	"medicine.h"
+
+1777771488 c:\users\hp\onedrive\desktop\c programming\pharmacy\medicine.h
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1777771614 source:c:\users\hp\onedrive\desktop\c programming\pharmacy\medicine.c
+	"medicine.h"
+

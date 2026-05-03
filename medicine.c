@@ -1,185 +1,127 @@
-#include <stdio.h>
-#include <string.h>
 #include "medicine.h"
-#include <stdlib.h>
 
-static int readLineTrim(FILE *file, char *buf, size_t size) {
-    if (fgets(buf, (int)size, file) == NULL) return 0;
-    buf[strcspn(buf, "\r\n")] = '\0';
-    return 1;
+int isExpired(char expiry[], int day, int month, int year) {
+    int exp_d, exp_m, exp_y;
+    sscanf(expiry, "%d/%d/%d", &exp_d, &exp_m, &exp_y);
+    if (exp_y < year) return 1;
+    if (exp_y == year && exp_m < month) return 1;
+    if (exp_y == year && exp_m == month && exp_d < day) return 1;
+    return 0;
 }
 
-void setupFile() {
-    FILE *file;
-
-    file = fopen("medicines.txt", "a");
-
-    if (file == NULL) {
-        printf("File could not be created.\n");
-        return;
-    }
-
-    fclose(file);
+int isNearExpiry(char expiry[], int day, int month, int year) {
+    int exp_d, exp_m, exp_y;
+    sscanf(expiry, "%d/%d/%d", &exp_d, &exp_m, &exp_y);
+    if (exp_y == year && exp_m == month && exp_d >= day) return 1;
+    return 0;
 }
 
-void addMedicine() {
-    FILE *file;
-    struct Medicine med;
-
-    file = fopen("medicines.txt", "a");
-
-    if (file == NULL) {
-        printf("Error opening file.\n");
-        return;
-    }
-
-    printf("\nEnter medicine ID: ");
-    scanf("%d", &med.id);
-
-    printf("Enter medicine name: ");
-    scanf(" %[^\n]", med.name);
-
-    printf("Enter quantity: ");
-    scanf("%d", &med.quantity);
-
-    printf("Enter price: ");
-    scanf("%f", &med.price);
-
-    fprintf(file, "%d\n", med.id);
-    fprintf(file, "%s\n", med.name);
-    fprintf(file, "%d\n", med.quantity);
-    fprintf(file, "%.2f\n", med.price);
-
-    fclose(file);
-
-    printf("\nMedicine added successfully.\n");
-}
-
-void viewAllMedicines() {
-    FILE *file;
-    struct Medicine med;
-    int found = 0;
-    char line[256];
-
-    file = fopen("medicines.txt", "r");
-
-        if (file == NULL) {
-            printf("No medicine file found.\n");
-            return;
+void showExpiredmedicines() {
+    FILE *fp = fopen("medicine.txt", "r");
+    struct medicine m;
+    if (fp == NULL) { printf("File not found!\n"); return; }
+    int d, mn, y;
+    printf("Enter todays date (dd/mm/yyyy): ");
+    scanf("%d/%d/%d", &d, &mn, &y);
+    printf("\n________ EXPIRED MEDICINES ________\n");
+    while (fscanf(fp, "%d %s %s %f %d %s", &m.id, m.name, m.category, &m.price, &m.quantity, m.expiry) != EOF) {
+        if (isExpired(m.expiry, d, mn, y)) {
+            printf("ID: %d | NAME: %s | Expiry: %s\n", m.id, m.name, m.expiry);
         }
+    }
+    fclose(fp);
+}
 
-        printf("\n========== All Medicines ==========");
+void showNearExpiredMedicines() {
+    FILE *fp = fopen("medicine.txt", "r");
+    struct medicine m;
+    if (fp == NULL) { printf("File not found!\n"); return; }
+    int d, mn, y;
+    printf("Enter todays date (dd/mm/yyyy): ");
+    scanf("%d/%d/%d", &d, &mn, &y);
+    printf("\n________ NEAR EXPIRED MEDICINES ________\n");
+    while (fscanf(fp, "%d %s %s %f %d %s", &m.id, m.name, m.category, &m.price, &m.quantity, m.expiry) != EOF) {
+        if (isNearExpiry(m.expiry, d, mn, y)) {
+            printf("ID: %d | NAME: %s | Expiry: %s\n", m.id, m.name, m.expiry);
+        }
+    }
+    fclose(fp);
+}
 
-        while (1) {
-            if (!readLineTrim(file, line, sizeof(line))) break;
-            if (line[0] == '\0') continue;
+void addSupplier() {
+    FILE *fp = fopen("supplier.txt", "a");
+    struct supplier s;
+    printf("Enter supplier ID: "); scanf("%d", &s.id);
+    printf("Enter supplier NAME: "); scanf("%s", s.name);
+    printf("Enter supplier PHONE: "); scanf("%s", s.phone);
+    printf("Enter supplier COMPANY: "); scanf("%s", s.company);
+    fprintf(fp, "%d %s %s %s\n", s.id, s.name, s.phone, s.company);
+    fclose(fp);
+    printf("Supplier added successfully\n");
+}
 
-            med.id = (int)strtol(line, NULL, 10);
+void viewSupplier() {
+    FILE *fp = fopen("supplier.txt", "r");
+    struct supplier s;
+    if (fp == NULL) { printf("File not found!\n"); return; }
+    printf("\n____ Supplier LIST _____\n");
+    while (fscanf(fp, "%d %s %s %s", &s.id, s.name, s.phone, s.company) != EOF) {
+        printf("\nID: %d\nNAME: %s\nPHONE: %s\nCOMPANY: %s\n", s.id, s.name, s.phone, s.company);
+    }
+    fclose(fp);
+}
 
-            if (!readLineTrim(file, med.name, sizeof(med.name))) break;
+void deleteSupplier() {
+    FILE *fp = fopen("supplier.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    struct supplier s;
+    int id, found = 0;
+    if (fp == NULL) { printf("File not found!\n"); return; }
+    printf("Enter Supplier ID to delete: "); scanf("%d", &id);
+    while (fscanf(fp, "%d %s %s %s", &s.id, s.name, s.phone, s.company) != EOF) {
+        if (s.id != id) fprintf(temp, "%d %s %s %s\n", s.id, s.name, s.phone, s.company);
+        else found = 1;
+    }
+    fclose(fp); fclose(temp);
+    remove("supplier.txt"); rename("temp.txt", "supplier.txt");
+    if (found) printf("Supplier deleted successfully\n");
+    else printf("Supplier not found!\n");
+}
 
-            if (!readLineTrim(file, line, sizeof(line))) break;
-            med.quantity = (int)strtol(line, NULL, 10);
-
-            if (!readLineTrim(file, line, sizeof(line))) break;
-            med.price = strtof(line, NULL);
-
-            printf("\nMedicine ID: %d", med.id);
-            printf("\nMedicine Name: %s", med.name);
-            printf("\nQuantity: %d", med.quantity);
-            printf("\nPrice: %.2f\n", med.price);
-
+void updateSupplier() {
+    FILE *fp = fopen("supplier.txt", "r");
+    FILE *temp = fopen("temp.txt", "w");
+    struct supplier s;
+    int id, found = 0;
+    if (fp == NULL) { printf("File not found!\n"); return; }
+    printf("Enter Supplier ID to update: "); scanf("%d", &id);
+    while (fscanf(fp, "%d %s %s %s", &s.id, s.name, s.phone, s.company) != EOF) {
+        if (s.id == id) {
+            printf("Enter New Name: "); scanf("%s", s.name);
+            printf("Enter New Phone: "); scanf("%s", s.phone);
+            printf("Enter New Company: "); scanf("%s", s.company);
             found = 1;
         }
-
-    if (!found) {
-        printf("\nNo medicines found.\n");
+        fprintf(temp, "%d %s %s %s\n", s.id, s.name, s.phone, s.company);
     }
-
-    fclose(file);
+    fclose(fp); fclose(temp);
+    remove("supplier.txt"); rename("temp.txt", "supplier.txt");
+    if (found) printf("Supplier updated successfully\n");
+    else printf("Supplier not found!\n");
 }
 
-void searchMedicine() {
-    FILE *file;
-    struct Medicine med;
-    char line[256];
-    int searchId;
-    int found = 0;
-
-    file = fopen("medicines.txt", "r");
-
-    if (file == NULL) {
-        printf("No medicine file found.\n");
-        return;
-    }
-
-    printf("\nEnter medicine ID to search: ");
-    scanf("%d", &searchId);
-
-    while (1) {
-        if (!readLineTrim(file, line, sizeof(line))) break;
-        if (line[0] == '\0') continue;
-
-        med.id = (int)strtol(line, NULL, 10);
-
-        if (!readLineTrim(file, med.name, sizeof(med.name))) break;
-
-        if (!readLineTrim(file, line, sizeof(line))) break;
-        med.quantity = (int)strtol(line, NULL, 10);
-
-        if (!readLineTrim(file, line, sizeof(line))) break;
-        med.price = strtof(line, NULL);
-
-        if (med.id == searchId) {
-            printf("\nMedicine found:\n");
-            printf("Medicine ID: %d\n", med.id);
-            printf("Medicine Name: %s\n", med.name);
-            printf("Quantity: %d\n", med.quantity);
-            printf("Price: %.2f\n", med.price);
-
-            found = 1;
-            break;
+void supplierMenu() {
+    int ch;
+    do {
+        printf("\n_______ SUPPLIER MENU ______\n");
+        printf("1. Add Supplier\n2. View Supplier\n3. Update Supplier\n4. Delete Supplier\n5. Back\nEnter choice: ");
+        scanf("%d", &ch);
+        switch (ch) {
+            case 1: addSupplier(); break;
+            case 2: viewSupplier(); break;
+            case 3: updateSupplier(); break;
+            case 4: deleteSupplier(); break;
         }
-    }
-
-    if (!found) {
-        printf("\nMedicine not found.\n");
-    }
-
-    fclose(file);
+    } while (ch != 5);
 }
 
-void mainMenu() {
-    int choice;
-
-    while (1) {
-        printf("\n\n========== Pharmacy Management System ==========\n");
-        printf("1. Add medicine\n");
-        printf("2. View all medicines\n");
-        printf("3. Search medicine\n");
-        printf("4. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
-
-        switch (choice) {
-            case 1:
-                addMedicine();
-                break;
-
-            case 2:
-                viewAllMedicines();
-                break;
-
-            case 3:
-                searchMedicine();
-                break;
-
-            case 4:
-                printf("\nExiting program.\n");
-                return;
-
-            default:
-                printf("\nInvalid choice. Try again.\n");
-        }
-    }
-}
