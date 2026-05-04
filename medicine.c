@@ -9,6 +9,12 @@ struct Supplier supplier[MAX];
 int count = 0;
 int supplierCount = 0;
 
+static void clearInputBuffer() {
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF) {
+    }
+}
+
 int compareDates(char *date1, char *date2) {
     int d1, m1, y1, d2, m2, y2;
     sscanf(date1, "%d/%d/%d", &d1, &m1, &y1);
@@ -43,6 +49,7 @@ int getDaysDifference(char *date) {
 
 void loadMedicines() {
     FILE *fp = fopen("medicines.txt", "r");
+    char line[256];
 
     if (fp == NULL) {
         printf("ERROR: medicines.txt not found!\n");
@@ -51,14 +58,28 @@ void loadMedicines() {
 
     count = 0;
 
-    while (fscanf(fp, "%d %s %d %f %s %d",
-                  &med[count].id,
-                  med[count].name,
-                  &med[count].stock,
-                  &med[count].price,
-                  med[count].expiryDate,
-                  &med[count].supplierId) == 6) {
-        count++;
+    while (count < MAX && fgets(line, sizeof(line), fp) != NULL) {
+        if (sscanf(line, "%d|%49[^|]|%d|%f|%10[^|]|%d",
+                   &med[count].id,
+                   med[count].name,
+                   &med[count].stock,
+                   &med[count].price,
+                   med[count].expiryDate,
+                   &med[count].supplierId) == 6) {
+            count++;
+            continue;
+        }
+
+        // Backward compatibility for old single-word name format.
+        if (sscanf(line, "%d %49s %d %f %10s %d",
+                   &med[count].id,
+                   med[count].name,
+                   &med[count].stock,
+                   &med[count].price,
+                   med[count].expiryDate,
+                   &med[count].supplierId) == 6) {
+            count++;
+        }
     }
 
     fclose(fp);
@@ -73,7 +94,7 @@ void saveMedicines() {
     }
 
     for (int i = 0; i < count; i++) {
-        fprintf(fp, "%d %s %d %.2f %s %d\n",
+        fprintf(fp, "%d|%s|%d|%.2f|%s|%d\n",
                 med[i].id,
                 med[i].name,
                 med[i].stock,
@@ -106,12 +127,31 @@ void showMedicines() {
 
 void addMedicine() {
     struct Medicine newMed;
+    int idExists;
 
-    printf("\nEnter medicine ID: ");
-    scanf("%d", &newMed.id);
+    if (count >= MAX) {
+        printf("Cannot add more medicines. Storage is full!\n");
+        return;
+    }
 
+    do {
+        idExists = 0;
+
+        printf("\nEnter medicine ID: ");
+        scanf("%d", &newMed.id);
+
+        for (int i = 0; i < count; i++) {
+            if (med[i].id == newMed.id) {
+                idExists = 1;
+                printf("Medicine ID already exists! Please re-enter a unique ID.\n");
+                break;
+            }
+        }
+    } while (idExists);
+
+    clearInputBuffer();
     printf("Enter medicine name: ");
-    scanf("%s", newMed.name);
+    scanf(" %49[^\n]", newMed.name);
 
     printf("Enter stock quantity: ");
     scanf("%d", &newMed.stock);
@@ -179,7 +219,7 @@ void sellMedicine() {
             printf("Expiry: %s\n", med[i].expiryDate);
             printf("Total: %.2f\n", total);
 
-            fprintf(fp, "%s %d %.2f\n",
+                fprintf(fp, "%s|%d|%.2f\n",
                     med[i].name, q, total);
 
             fclose(fp);
@@ -200,6 +240,7 @@ void sellMedicine() {
 
 void salesReport() {
     FILE *fp = fopen("sales.txt", "r");
+    char line[256];
 
     if (fp == NULL) {
         printf("No sales record found!\n");
@@ -212,9 +253,12 @@ void salesReport() {
 
     printf("\n--- SALES REPORT ---\n");
 
-    while (fscanf(fp, "%s %d %f", name, &q, &total) == 3) {
-        printf("%s | Quantity: %d | Total: %.2f\n",
-               name, q, total);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (sscanf(line, "%49[^|]|%d|%f", name, &q, &total) == 3 ||
+            sscanf(line, "%49s %d %f", name, &q, &total) == 3) {
+            printf("%s | Quantity: %d | Total: %.2f\n",
+                   name, q, total);
+        }
     }
 
     fclose(fp);
@@ -264,8 +308,9 @@ void updateMedicine() {
             printf("Price: %.2f\n", med[i].price);
             printf("Expiry: %s\n", med[i].expiryDate);
 
+            clearInputBuffer();
             printf("\nEnter new name: ");
-            scanf("%s", med[i].name);
+            scanf(" %49[^\n]", med[i].name);
 
             printf("Enter new stock: ");
             scanf("%d", &med[i].stock);
