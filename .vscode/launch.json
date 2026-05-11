@@ -1,17 +1,19 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
     {
-      "name": "C/C++ Runner: Debug Session",
+      "name": "Debug Program",
       "type": "cppdbg",
       "request": "launch",
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
       "cwd": "c:/DesktopFolders/Job Qualifications/Project115",
-      "program": "c:/DesktopFolders/Job Qualifications/Project115/build/Debug/outDebug",
+      "program": "c:/DesktopFolders/Job Qualifications/Project115/build/program.exe",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
+      "preLaunchTask": "Build C Project",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
